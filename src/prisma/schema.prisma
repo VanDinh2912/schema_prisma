@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id        String           @id @default(uuid())
+  name      String
+  email     String           @unique
+  avatar    String?
+  role      String
+  created_at DateTime        @default(now())
+
+  content_goals    content_goals[]
+  content_ideas    content_ideas[]
+  drafts           drafts[]
+  scheduled_posts  scheduled_posts[]
+  folders          folders[]
+}
+
+model content_goals {
+  id           String   @id @default(uuid())
+  user_id      String
+  goal_type    String
+  target_value Int
+  current_value Int
+  created_at   DateTime @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model content_ideas {
+  id        String   @id @default(uuid())
+  user_id   String
+  topic     String
+  tone      String?
+  idea_text String
+  source    String?
+  created_at DateTime @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model drafts {
+  id        String   @id @default(uuid())
+  user_id   String
+  content   String
+  tone      String?
+  is_caption Boolean @default(false)
+  created_at DateTime @default(now())
+
+  user         users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post_metrics post_metrics[]
+  hashtags     hashtags[]
+  draft_folders draft_folders[]
+  scheduled_posts scheduled_posts[]
+}
+
+model post_metrics {
+  id         String  @id @default(uuid())
+  draft_id   String
+  likes      Int
+  shares     Int
+  comments   Int
+  created_at DateTime @default(now())
+
+  draft drafts @relation(fields: [draft_id], references: [id], onDelete: Cascade)
+}
+
+model hashtags {
+  id              String  @id @default(uuid())
+  draft_id        String
+  tag             String
+  relevance_score Float
+
+  draft drafts @relation(fields: [draft_id], references: [id], onDelete: Cascade)
+}
+
+model draft_folders {
+  id        String @id @default(uuid())
+  draft_id  String
+  folder_id String
+
+  draft  drafts  @relation(fields: [draft_id], references: [id], onDelete: Cascade)
+  folder folders @relation(fields: [folder_id], references: [id], onDelete: Cascade)
+}
+
+model folders {
+  id        String   @id @default(uuid())
+  user_id   String
+  name      String
+  created_at DateTime @default(now())
+
+  user  users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  draft_folders draft_folders[]
+}
+
+model scheduled_posts {
+  id           String   @id @default(uuid())
+  user_id      String
+  draft_id     String
+  platform     String
+  scheduled_time DateTime
+  status       String
+  created_at   DateTime @default(now())
+
+  user  users  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  draft drafts @relation(fields: [draft_id], references: [id], onDelete: Cascade)
+}
